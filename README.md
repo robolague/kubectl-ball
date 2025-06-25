@@ -1,5 +1,7 @@
 # kubectl-ball  🎱
 
+I made this initially at Tinder, in BASH. Since I no longer have access to that codebase, I have remade it for the public and improved on it with the help of AI, in Go.
+
 A `kubectl` plugin to operate on **multiple Kubernetes clusters** simultaneously — with fzf-based selection, smart grepping, output formatting, namespace syncing, and kubeconfig merging.
 
 ---
