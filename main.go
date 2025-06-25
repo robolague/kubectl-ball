@@ -20,7 +20,35 @@ type Config struct {
 
 var configPath = filepath.Join(os.Getenv("HOME"), ".kubectl-ball", "config.yaml")
 
-func checkFzf() error {
+type CmdRunner interface {
+	Output() ([]byte, error)
+	Run() error
+	SetStdin(stdin *strings.Reader)
+	SetStdout(stdout *bytes.Buffer)
+	SetStderr(stderr *bytes.Buffer)
+}
+
+type Commander interface {
+	Command(name string, args ...string) CmdRunner
+}
+
+type realCommander struct{}
+
+func (realCommander) Command(name string, args ...string) CmdRunner {
+	return &realCmdWrapper{cmd: exec.Command(name, args...)}
+}
+
+type realCmdWrapper struct {
+	cmd *exec.Cmd
+}
+
+func (r *realCmdWrapper) Output() ([]byte, error)        { return r.cmd.Output() }
+func (r *realCmdWrapper) Run() error                     { return r.cmd.Run() }
+func (r *realCmdWrapper) SetStdin(stdin *strings.Reader) { r.cmd.Stdin = stdin }
+func (r *realCmdWrapper) SetStdout(stdout *bytes.Buffer) { r.cmd.Stdout = stdout }
+func (r *realCmdWrapper) SetStderr(stderr *bytes.Buffer) { r.cmd.Stderr = stderr }
+
+func checkFzf(commander Commander) error {
 	_, err := exec.LookPath("fzf")
 	if err != nil {
 		return fmt.Errorf(`"fzf" not found. Install it:
@@ -31,8 +59,8 @@ func checkFzf() error {
 	return nil
 }
 
-func getContexts() ([]string, error) {
-	cmd := exec.Command("kubectl", "config", "get-contexts", "-o=name")
+func getContexts(commander Commander) ([]string, error) {
+	cmd := commander.Command("kubectl", "config", "get-contexts", "-o=name")
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -40,9 +68,9 @@ func getContexts() ([]string, error) {
 	return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
 }
 
-func selectClusters(contexts []string) ([]string, error) {
-	cmd := exec.Command("fzf", "--multi", "--prompt=Select Clusters > ")
-	cmd.Stdin = strings.NewReader(strings.Join(contexts, "\n"))
+func selectClusters(commander Commander, contexts []string) ([]string, error) {
+	cmd := commander.Command("fzf", "--multi", "--prompt=Select Clusters > ")
+	cmd.SetStdin(strings.NewReader(strings.Join(contexts, "\n")))
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("fzf selection error: %w", err)
@@ -69,7 +97,7 @@ func loadConfig() (Config, error) {
 	return config, err
 }
 
-func runCommandInContext(context string, args []string, namespace, grep, outputFormat string, wg *sync.WaitGroup, mu *sync.Mutex, results *bytes.Buffer) {
+func runCommandInContext(commander Commander, context string, args []string, namespace, grep, outputFormat string, wg *sync.WaitGroup, mu *sync.Mutex, results *bytes.Buffer) {
 	defer wg.Done()
 
 	cmdArgs := append([]string{"--context", context}, args...)
@@ -80,10 +108,10 @@ func runCommandInContext(context string, args []string, namespace, grep, outputF
 		cmdArgs = append(cmdArgs, "-o", outputFormat)
 	}
 
-	cmd := exec.Command("kubectl", cmdArgs...)
+	cmd := commander.Command("kubectl", cmdArgs...)
 	var out, stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
+	cmd.SetStdout(&out)
+	cmd.SetStderr(&stderr)
 
 	err := cmd.Run()
 	outputStr := out.String()
@@ -112,6 +140,7 @@ func runCommandInContext(context string, args []string, namespace, grep, outputF
 }
 
 func main() {
+	commander := realCommander{}
 	args := os.Args[1:]
 	if len(args) == 0 {
 		fmt.Println("Usage: kubectl ball [--select] [--grep pattern] [--format json|yaml|wide|table] [-n ns] <kubectl args>")
@@ -152,16 +181,16 @@ func main() {
 	var err error
 
 	if selectFlag || _, err := os.Stat(configPath); os.IsNotExist(err) {
-		if err := checkFzf(); err != nil {
+		if err := checkFzf(commander); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		contexts, err := getContexts()
+		contexts, err := getContexts(commander)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get contexts: %v\n", err)
 			os.Exit(1)
 		}
-		selected, err := selectClusters(contexts)
+		selected, err := selectClusters(commander, contexts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Cluster selection failed: %v\n", err)
 			os.Exit(1)
@@ -186,7 +215,7 @@ func main() {
 
 	for _, context := range config.Clusters {
 		wg.Add(1)
-		go runCommandInContext(context, kubectlArgs, config.Namespace, grepPattern, outputFormat, &wg, &mu, &results)
+		go runCommandInContext(commander, context, kubectlArgs, config.Namespace, grepPattern, outputFormat, &wg, &mu, &results)
 	}
 
 	wg.Wait()

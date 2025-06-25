@@ -1,6 +1,7 @@
 PLUGIN_NAME=kubectl-ball
 VERSION=v0.1.0
 BUILD_DIR=release
+DOCKER_IMAGE=kubectl-ball
 
 PLATFORMS = \
   linux_amd64 \
@@ -26,3 +27,22 @@ sha256:
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+# Docker targets
+docker-build:
+	docker build -t $(DOCKER_IMAGE):$(VERSION) .
+	docker tag $(DOCKER_IMAGE):$(VERSION) $(DOCKER_IMAGE):latest
+
+docker-run:
+	docker run -it --rm \
+		-v $(HOME)/.kube:/root/.kube:ro \
+		-v $(PWD):/workspace \
+		-e KUBECONFIG=/root/.kube/config \
+		$(DOCKER_IMAGE):latest $(ARGS)
+
+docker-shell:
+	docker run -it --rm \
+		-v $(HOME)/.kube:/root/.kube:ro \
+		-v $(PWD):/workspace \
+		-e KUBECONFIG=/root/.kube/config \
+		$(DOCKER_IMAGE):latest /bin/bash

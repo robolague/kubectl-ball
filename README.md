@@ -15,6 +15,7 @@ A `kubectl` plugin to operate on **multiple Kubernetes clusters** simultaneously
 - 🔀 **Auto kubeconfig merging** (no flag needed)
 - ⚡ **Parallel execution** of `kubectl` across clusters
 - 📦 **Krew-compatible** plugin layout
+- 🐳 **Docker support** with host kubeconfig access
 
 ---
 
@@ -25,16 +26,32 @@ A `kubectl` plugin to operate on **multiple Kubernetes clusters** simultaneously
 ```bash
 kubectl krew install ball
 ```
+
 ### Option 2: Manual build
+```bash
 git clone https://github.com/robolague/kubectl-ball.git
 cd kubectl-ball
 go build -o kubectl-ball main.go
 mv kubectl-ball ~/.krew/bin/   # or any directory in your $PATH
-
+```
 Make it executable and run as:
 ```bash
 kubectl ball ...
 ```
+
+### Option 3: Docker
+```bash
+# Build the Docker image
+make docker-build
+
+# Run kubectl-ball in Docker (mounts your ~/.kube directory)
+make docker-run ARGS="--select get pods"
+
+# Or run interactively
+make docker-shell
+```
+
+
 
 ## 🚀 Usage
 Select clusters interactively (and persist selection)
@@ -58,6 +75,29 @@ Format output
 kubectl ball --format yaml get configmaps
 ```
 
+## 🐳 Docker Usage
+The Docker image includes kubectl and fzf, and automatically mounts your host's kubeconfig:
+
+```bash
+# Build the image
+make docker-build
+
+# Run a command
+make docker-run ARGS="get pods"
+
+# Run with cluster selection
+make docker-run ARGS="--select get services"
+
+# Interactive shell
+make docker-shell
+```
+
+The Docker container:
+- Mounts your `~/.kube` directory (read-only)
+- Sets `KUBECONFIG=/root/.kube/config`
+- Mounts current directory as `/workspace`
+- Includes kubectl and fzf pre-installed
+
 ## 🧪 Output Example
 ```bash
 ===== [dev-cluster] =====
@@ -66,7 +106,8 @@ kube-system   dns-abc123   0/1   CrashLoopBackOff   2m
 ===== [prod-cluster] =====
 web-team      frontend-xyz   0/1   CrashLoopBackOff   30s
 ```
-🔧 Building and Releasing
+
+## 🔧 Building and Releasing
 Build for all supported platforms
 ```bash
 make all
@@ -79,6 +120,11 @@ Clean up build artifacts
 ```bash
 make clean
 ```
+Build Docker image
+```bash
+make docker-build
+```
+
 Release binaries go to release/, ready for upload to GitHub and Krew.
 
 ## 🧊 Krew Plugin Manifest (plugin.yaml)
@@ -103,7 +149,6 @@ go build -o kubectl-ball main.go
 ./kubectl-ball --select get pods
 ```
 Submit a pull request 🙌
-
 
 ## 📜 License
 This project is licensed under the terms of the GNU General Public License v3.0.
