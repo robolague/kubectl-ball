@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, first-commit-code ]
+  pull_request:
+    branches: [ main, first-commit-code ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Run tests
+        run: go test ./... 
