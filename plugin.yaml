@@ -1,0 +1,28 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: ball
+spec:
+  version: "v0.1.0"
+  homepage: "https://github.com/robolague/kubectl-ball"
+  shortDescription: "Run kubectl commands across multiple clusters"
+  description: |
+    kubectl-ball helps you run commands across many Kubernetes clusters.
+    Use fzf to select clusters, sync namespaces, and grep or format output easily.
+
+  platforms:
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    uri: https://github.com/robolague/kubectl-ball/releases/download/v0.1.0/kubectl-ball_linux_amd64.tar.gz
+    sha256: "<computed-sha>"
+    bin: kubectl-ball
+
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    uri: https://github.com/robolague/kubectl-ball/releases/download/v0.1.0/kubectl-ball_darwin_amd64.tar.gz
+    sha256: "<computed-sha>"
+    bin: kubectl-ball
