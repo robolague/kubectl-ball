@@ -166,4 +166,93 @@ func TestRunCommandInContext_Error(t *testing.T) {
 	}
 }
 
+func TestGetNamespaces_Success(t *testing.T) {
+	mc := &mockCommander{
+		outputs: map[string]*mockCmdRunner{
+			"kubectl --context ctx get namespaces -o=name": {output: []byte("namespace/default\nnamespace/kube-system\nnamespace/my-app\n"), err: nil},
+		},
+	}
+	namespaces, err := getNamespaces(mc, "ctx")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"default", "kube-system", "my-app"}
+	if !reflect.DeepEqual(namespaces, want) {
+		t.Errorf("expected %v, got %v", want, namespaces)
+	}
+}
+
+func TestGetNamespaces_Error(t *testing.T) {
+	mc := &mockCommander{
+		outputs: map[string]*mockCmdRunner{
+			"kubectl --context ctx get namespaces -o=name": {output: nil, err: errors.New("kubectl fail")},
+		},
+	}
+	_, err := getNamespaces(mc, "ctx")
+	if err == nil || !strings.Contains(err.Error(), "kubectl fail") {
+		t.Errorf("expected error containing 'kubectl fail', got %v", err)
+	}
+}
+
+func TestGetNamespaces_EmptyOutput(t *testing.T) {
+	mc := &mockCommander{
+		outputs: map[string]*mockCmdRunner{
+			"kubectl --context ctx get namespaces -o=name": {output: []byte(""), err: nil},
+		},
+	}
+	namespaces, err := getNamespaces(mc, "ctx")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// When input is empty, strings.Split returns a slice with one empty string
+	// After trimming prefix, it should be empty
+	if len(namespaces) != 1 || namespaces[0] != "" {
+		t.Errorf("expected [\"\"], got %v", namespaces)
+	}
+}
+
+func TestSelectNamespace_Success(t *testing.T) {
+	mc := &mockCommander{
+		outputs: map[string]*mockCmdRunner{
+			"fzf --prompt=Select Namespace > ": {output: []byte("my-app\n"), err: nil},
+		},
+	}
+	namespaces := []string{"default", "kube-system", "my-app"}
+	selected, err := selectNamespace(mc, namespaces)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := "my-app"
+	if selected != want {
+		t.Errorf("expected %s, got %s", want, selected)
+	}
+}
+
+func TestSelectNamespace_Error(t *testing.T) {
+	mc := &mockCommander{
+		outputs: map[string]*mockCmdRunner{
+			"fzf --prompt=Select Namespace > ": {output: nil, err: errors.New("fzf fail")},
+		},
+	}
+	_, err := selectNamespace(mc, []string{"default", "kube-system"})
+	if err == nil || !strings.Contains(err.Error(), "fzf fail") {
+		t.Errorf("expected error containing 'fzf fail', got %v", err)
+	}
+}
+
+func TestSelectNamespace_EmptyList(t *testing.T) {
+	mc := &mockCommander{
+		outputs: map[string]*mockCmdRunner{
+			"fzf --prompt=Select Namespace > ": {output: []byte(""), err: nil},
+		},
+	}
+	selected, err := selectNamespace(mc, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if selected != "" {
+		t.Errorf("expected empty string, got %s", selected)
+	}
+}
+
 // Note: getContexts and other exec.Command-based functions are not tested here due to lack of dependency injection.
