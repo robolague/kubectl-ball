@@ -10,11 +10,11 @@ import (
 	"strings"
 	"sync"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Clusters  []string `yaml:"clusters"`
+	Clusters []string `yaml:"clusters"`
 	Namespace string   `yaml:"namespace"`
 }
 
