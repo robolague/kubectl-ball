@@ -1,0 +1,79 @@
+version: 1
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - gofmt
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - structcheck
+    - varcheck
+    - ineffassign
+    - deadcode
+    - typecheck
+    - gosec
+    - gocyclo
+    - dupl
+    - misspell
+    - unparam
+    - nakedret
+    - prealloc
+    - gocritic
+    - goconst
+    - gomnd
+    - gomoddirectives
+    - gomodguard
+    - unconvert
+    - whitespace
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  gocyclo:
+    min-complexity: 15
+  dupl:
+    threshold: 100
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  misspell:
+    locale: US
+  lll:
+    line-length: 140
+  gomnd:
+    checks: argument,case,condition,operation,return,tassign
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gomnd
+        - gocyclo
+        - dupl
+        - gocritic
+        - gosec
+        - errcheck
+        - goconst
+        - gomoddirectives
+        - gomodguard
+        - unconvert
+        - whitespace 
