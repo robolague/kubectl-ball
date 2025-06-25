@@ -4,6 +4,10 @@ I made this initially at Tinder, in BASH. Since I no longer have access to that 
 
 A `kubectl` plugin to operate on **multiple Kubernetes clusters** simultaneously — with fzf-based selection, smart grepping, output formatting, namespace syncing, and kubeconfig merging.
 
+[![CI](https://github.com/robolague/kubectl-ball/actions/workflows/ci.yml/badge.svg)](https://github.com/robolague/kubectl-ball/actions/workflows/ci.yml)
+[![Lint](https://github.com/robolague/kubectl-ball/actions/workflows/lint.yml/badge.svg)](https://github.com/robolague/kubectl-ball/actions/workflows/lint.yml)
+[![Release](https://github.com/robolague/kubectl-ball/actions/workflows/release.yml/badge.svg)](https://github.com/robolague/kubectl-ball/actions/workflows/release.yml)
+
 ---
 
 ## ✨ Features
