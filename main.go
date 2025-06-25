@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	Clusters []string `yaml:"clusters"`
+	Clusters  []string `yaml:"clusters"`
 	Namespace string   `yaml:"namespace"`
 }
 
@@ -180,7 +180,25 @@ func main() {
 	var config Config
 	var err error
 
-	if selectFlag || _, err := os.Stat(configPath); os.IsNotExist(err) {
+	if selectFlag {
+		// Need to select clusters
+	} else if _, err = os.Stat(configPath); os.IsNotExist(err) {
+		// Config file doesn't exist, need to select clusters
+	} else {
+		// Config file exists, load it
+		config, err = loadConfig()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
+			os.Exit(1)
+		}
+		if namespace != "" {
+			config.Namespace = namespace
+			saveConfig(config)
+		}
+	}
+
+	// If we need to select clusters (either --select flag or no config file)
+	if selectFlag || config.Clusters == nil {
 		if err := checkFzf(commander); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -197,16 +215,6 @@ func main() {
 		}
 		config = Config{Clusters: selected, Namespace: namespace}
 		saveConfig(config)
-	} else {
-		config, err = loadConfig()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
-			os.Exit(1)
-		}
-		if namespace != "" {
-			config.Namespace = namespace
-			saveConfig(config)
-		}
 	}
 
 	var wg sync.WaitGroup
