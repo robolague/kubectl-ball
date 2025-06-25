@@ -78,6 +78,30 @@ func selectClusters(commander Commander, contexts []string) ([]string, error) {
 	return strings.Split(strings.TrimSpace(string(out)), "\n"), nil
 }
 
+func getNamespaces(commander Commander, context string) ([]string, error) {
+	cmd := commander.Command("kubectl", "--context", context, "get", "namespaces", "-o=name")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	// Remove "namespace/" prefix from each namespace
+	namespaces := strings.Split(strings.TrimSpace(string(output)), "\n")
+	for i, ns := range namespaces {
+		namespaces[i] = strings.TrimPrefix(ns, "namespace/")
+	}
+	return namespaces, nil
+}
+
+func selectNamespace(commander Commander, namespaces []string) (string, error) {
+	cmd := commander.Command("fzf", "--prompt=Select Namespace > ")
+	cmd.SetStdin(strings.NewReader(strings.Join(namespaces, "\n")))
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("fzf selection error: %w", err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 func saveConfig(config Config) error {
 	os.MkdirAll(filepath.Dir(configPath), 0700)
 	data, err := yaml.Marshal(config)
@@ -143,12 +167,12 @@ func main() {
 	commander := realCommander{}
 	args := os.Args[1:]
 	if len(args) == 0 {
-		fmt.Println("Usage: kubectl ball [--select] [--grep pattern] [--format json|yaml|wide|table] [-n ns] <kubectl args>")
+		fmt.Println("Usage: kubectl ball [--select] [--select-namespace] [--grep pattern] [--format json|yaml|wide|table] [-n ns] <kubectl args>")
 		os.Exit(1)
 	}
 
 	var (
-		selectFlag                           bool
+		selectFlag, selectNamespaceFlag      bool
 		namespace, grepPattern, outputFormat string
 		kubectlArgs                          []string
 	)
@@ -157,6 +181,8 @@ func main() {
 		switch args[i] {
 		case "--select":
 			selectFlag = true
+		case "--select-namespace":
+			selectNamespaceFlag = true
 		case "--grep":
 			if i+1 < len(args) {
 				grepPattern = args[i+1]
@@ -214,6 +240,35 @@ func main() {
 			os.Exit(1)
 		}
 		config = Config{Clusters: selected, Namespace: namespace}
+		saveConfig(config)
+	}
+
+	// Handle namespace selection
+	if selectNamespaceFlag {
+		if err := checkFzf(commander); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		// Use the first cluster to get namespaces (assuming all clusters have similar namespaces)
+		if len(config.Clusters) == 0 {
+			fmt.Fprintln(os.Stderr, "No clusters selected. Please select clusters first.")
+			os.Exit(1)
+		}
+
+		namespaces, err := getNamespaces(commander, config.Clusters[0])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to get namespaces: %v\n", err)
+			os.Exit(1)
+		}
+
+		selectedNamespace, err := selectNamespace(commander, namespaces)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Namespace selection failed: %v\n", err)
+			os.Exit(1)
+		}
+
+		config.Namespace = selectedNamespace
 		saveConfig(config)
 	}
 
