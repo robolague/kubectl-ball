@@ -31,15 +31,7 @@ func checkFzf() error {
 	return nil
 }
 
-func getContexts(merge bool) ([]string, error) {
-	if merge {
-		cmd := exec.Command("kubectl", "config", "view", "--flatten", "--minify", "-o=jsonpath={.contexts[*].name}")
-		output, err := cmd.Output()
-		if err != nil {
-			return nil, err
-		}
-		return strings.Fields(string(output)), nil
-	}
+func getContexts() ([]string, error) {
 	cmd := exec.Command("kubectl", "config", "get-contexts", "-o=name")
 	output, err := cmd.Output()
 	if err != nil {
@@ -95,7 +87,7 @@ func runCommandInContext(context string, args []string, namespace, grep, outputF
 
 	err := cmd.Run()
 	outputStr := out.String()
-	
+
 	if grep != "" {
 		lines := []string{}
 		for _, line := range strings.Split(outputStr, "\n") {
@@ -122,28 +114,35 @@ func runCommandInContext(context string, args []string, namespace, grep, outputF
 func main() {
 	args := os.Args[1:]
 	if len(args) == 0 {
-		fmt.Println("Usage: kubectl ball [--select] [--merge-kubeconfigs] [--grep pattern] [--format json|yaml|wide|table] [-n ns] <kubectl args>")
+		fmt.Println("Usage: kubectl ball [--select] [--grep pattern] [--format json|yaml|wide|table] [-n ns] <kubectl args>")
 		os.Exit(1)
 	}
 
 	var (
-		selectFlag, mergeKubeconfigs bool
+		selectFlag                           bool
 		namespace, grepPattern, outputFormat string
-		kubectlArgs []string
+		kubectlArgs                          []string
 	)
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--select":
 			selectFlag = true
-		case "--merge-kubeconfigs":
-			mergeKubeconfigs = true
 		case "--grep":
-			if i+1 < len(args) { grepPattern = args[i+1]; i++ }
+			if i+1 < len(args) {
+				grepPattern = args[i+1]
+				i++
+			}
 		case "--format":
-			if i+1 < len(args) { outputFormat = args[i+1]; i++ }
+			if i+1 < len(args) {
+				outputFormat = args[i+1]
+				i++
+			}
 		case "-n", "--namespace":
-			if i+1 < len(args) { namespace = args[i+1]; i++ }
+			if i+1 < len(args) {
+				namespace = args[i+1]
+				i++
+			}
 		default:
 			kubectlArgs = append(kubectlArgs, args[i])
 		}
@@ -157,7 +156,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		contexts, err := getContexts(mergeKubeconfigs)
+		contexts, err := getContexts()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get contexts: %v\n", err)
 			os.Exit(1)

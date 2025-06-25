@@ -12,7 +12,7 @@ A `kubectl` plugin to operate on **multiple Kubernetes clusters** simultaneously
 - 📁 **Shared namespace** across all clusters (`-n`)
 - 🧠 **Smart grep filtering** (`--grep`) with per-cluster headers
 - 🎨 **Formatted output** (`--format json|yaml|wide|table`)
-- 🔀 **Auto kubeconfig merging** (`--merge-kubeconfigs`)
+- 🔀 **Auto kubeconfig merging** (no flag needed)
 - ⚡ **Parallel execution** of `kubectl` across clusters
 - 📦 **Krew-compatible** plugin layout
 
@@ -57,10 +57,7 @@ Format output
 ```bash
 kubectl ball --format yaml get configmaps
 ```
-Merge multiple kubeconfigs
-```bash
-KUBECONFIG=~/.kube/config:~/.kube/eksconfig kubectl ball --merge-kubeconfigs --select get nodes
-```
+
 ## 🧪 Output Example
 ```bash
 ===== [dev-cluster] =====
