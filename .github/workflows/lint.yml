@@ -21,8 +21,11 @@ jobs:
         run: go mod verify
       - name: Tidy dependencies
         run: go mod tidy
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.58.0
-      - name: Run golangci-lint
-        run: $(go env GOPATH)/bin/golangci-lint run --disable=typecheck --allow-parallel-runners 
+      - name: Run go vet
+        run: go vet ./...
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+      - name: Run staticcheck
+        run: staticcheck ./...
+      - name: Run go fmt check
+        run: test -z "$(gofmt -l .)" 
