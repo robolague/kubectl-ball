@@ -15,14 +15,30 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    uri: https://github.com/robolague/kubectl-ball/releases/download/v0.1.0/kubectl-ball_linux_amd64.tar.gz
-    sha256: "<REPLACE_WITH_LINUX_SHA256>"
+    uri: https://github.com/robolague/kubectl-ball/releases/download/v0.1.1/kubectl-ball_linux_amd64.tar.gz
+    sha256: "23ba8ed7ffb65e19eca53ca14dd2857f8c6ca7c8e0f57290b1117f4f6199eabf"
+    bin: kubectl-ball
+
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    uri: https://github.com/robolague/kubectl-ball/releases/download/v0.1.1/kubectl-ball_linux_arm64.tar.gz
+    sha256: "d27d9dc28d11f123e6c7d484e4bf8558129879051a86253f0c55f28cf0dde636"
     bin: kubectl-ball
 
   - selector:
       matchLabels:
         os: darwin
         arch: amd64
-    uri: https://github.com/robolague/kubectl-ball/releases/download/v0.1.0/kubectl-ball_darwin_amd64.tar.gz
-    sha256: "<REPLACE_WITH_DARWIN_SHA256>"
+    uri: https://github.com/robolague/kubectl-ball/releases/download/v0.1.1/kubectl-ball_darwin_amd64.tar.gz
+    sha256: "9a2f06b87dd867f313347eff8cc5d67e546482d2df7dbfdaca2f3fd4f85d8bd8"
+    bin: kubectl-ball
+
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    uri: https://github.com/robolague/kubectl-ball/releases/download/v0.1.1/kubectl-ball_darwin_arm64.tar.gz
+    sha256: "001eaf8711865bbb731fa3e7a628cad6db6bc00a6c5e8e2f048c4f6ac812c32a"
     bin: kubectl-ball
