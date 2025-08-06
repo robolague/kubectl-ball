@@ -69,6 +69,11 @@ func getContexts(commander Commander) ([]string, error) {
 }
 
 func selectClusters(commander Commander, contexts []string) ([]string, error) {
+	// If there's only one context, automatically select it
+	if len(contexts) == 1 {
+		return contexts, nil
+	}
+
 	cmd := commander.Command("fzf", "--multi", "--prompt=Select Clusters > ")
 	cmd.SetStdin(strings.NewReader(strings.Join(contexts, "\n")))
 	out, err := cmd.Output()
@@ -270,6 +275,22 @@ func main() {
 
 		config.Namespace = selectedNamespace
 		saveConfig(config)
+	}
+
+	// If no kubectl arguments provided, just save the selection and exit
+	if len(kubectlArgs) == 0 {
+		if selectFlag || selectNamespaceFlag {
+			fmt.Println("Selection saved successfully!")
+			return
+		}
+		// If no flags and no args, show usage
+		fmt.Println("Usage: kubectl ball [--select] [--select-namespace] [--grep pattern] [--format json|yaml|wide|table] [-n ns] <kubectl args>")
+		fmt.Println("Examples:")
+		fmt.Println("  kubectl ball --select                    # Select clusters and save")
+		fmt.Println("  kubectl ball --select-namespace          # Select namespace and save")
+		fmt.Println("  kubectl ball get pods                    # Run 'get pods' across selected clusters")
+		fmt.Println("  kubectl ball get pods --grep running     # Run 'get pods' and grep for 'running'")
+		os.Exit(1)
 	}
 
 	var wg sync.WaitGroup
