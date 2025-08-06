@@ -98,6 +98,11 @@ func getNamespaces(commander Commander, context string) ([]string, error) {
 }
 
 func selectNamespace(commander Commander, namespaces []string) (string, error) {
+	// If there's only one namespace, automatically select it
+	if len(namespaces) == 1 {
+		return namespaces[0], nil
+	}
+
 	cmd := commander.Command("fzf", "--prompt=Select Namespace > ")
 	cmd.SetStdin(strings.NewReader(strings.Join(namespaces, "\n")))
 	out, err := cmd.Output()
@@ -279,8 +284,14 @@ func main() {
 
 	// If no kubectl arguments provided, just save the selection and exit
 	if len(kubectlArgs) == 0 {
-		if selectFlag || selectNamespaceFlag {
+		if selectFlag {
 			fmt.Println("Selection saved successfully!")
+			fmt.Printf("Selected clusters: %s\n", strings.Join(config.Clusters, ", "))
+			return
+		}
+		if selectNamespaceFlag {
+			fmt.Println("Selection saved successfully!")
+			fmt.Printf("Selected namespace: %s\n", config.Namespace)
 			return
 		}
 		// If no flags and no args, show usage
